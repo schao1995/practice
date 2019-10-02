@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>轮播图</title>
+	<link rel="stylesheet" type="text/css" href="../../public.css">
+	<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no" />
+	<style type="text/css">
+		.parentEl {
+			width: 100%;
+			height: 300px;
+			margin: 100px auto;
+			position: relative;
+			overflow: hidden;
+		}
+		.childEl {
+			width: 100%;
+			height: 100%;
+			position: absolute;
+			font-size: 200px;
+			text-align: center;
+			line-height: 300px;
+		}
+		.childEl:nth-child(1) {
+			background: yellow;
+		}
+		.childEl:nth-child(2) {
+			background: green;
+		}
+		.childEl:nth-child(3) {
+			background: pink;
+		}
+		.childEl:nth-child(4) {
+			background: red;
+		}
+		.childEl:nth-child(5) {
+			background: blue;
+		}
+	</style>
+</head>
+<body>
+	<div class="parentEl">
+		<div class="childEl">1</div>
+		<div class="childEl">2</div>
+		<div class="childEl">3</div>
+		<div class="childEl">4</div>
+		<div class="childEl">5</div>
+	</div>
+</body>
+</html>
+<script type="text/javascript">
+	class Bunner {
+	    constructor (el, times) {
+	        this.el = el
+	        this.times = times
+	        this.mytime = null
+	        this.mytimeout = null
+	        this.clientNum = [0, 0, 0]
+	    }
+	    // 重置每一个图片位置，保证图片位置不会过界
+	    init (index) {
+	    	console.log('init')
+	        for (let i = 0; i < this.el.length; i++) {
+	            this.el[i].style.left = (i - index) * this.el[0].clientWidth + 'px'
+	        }
+	        if (index === 0) {
+	        	this.el[this.el.length - 1].style.left = -this.el[0].clientWidth + 'px'
+	        }
+	        if (index === this.el.length - 1) {
+	        	for (let i = 0; i < this.el.length - 2; i++) {
+		            this.el[i].style.left = (i + 1) * this.el[0].clientWidth + 'px'
+		        }
+		        this.el[this.el.length - 2].style.left = -this.el[0].clientWidth + 'px'
+	        }
+	    }
+	    // 轮播图，参数决定滚动方向
+	    run (direction) {
+	        console.log('run')
+	        this.mytime = setInterval(() => {
+	        	// if (parseFloat(this.el[3].style.left) > this.el[0].clientWidth *5) {
+	        	// 	alert(1)
+	        	// }
+	            for (let i = 0; i < this.el.length; i++) {
+	                this.el[i].style.left = parseFloat(this.el[i].style.left) + this.el[0].clientWidth * 4 * direction / 10 + 'px'
+	            }
+	            let num1 = Math.round(parseFloat(this.el[0].style.left) % this.el[0].clientWidth)
+	            let num2 = Math.round(parseFloat(this.el[0].style.left) % this.el[0].clientWidth + Math.abs(this.el[0].clientWidth * 4 * direction / 10))
+	            // console.log(1)
+	            // console.log(num1)
+	            // console.log(num2)
+	            // console.log(parseFloat(this.el[0].style.left))
+	            // console.log(this.el[0].clientWidth)
+	            // console.log(Math.abs(this.el[0].clientWidth * 4 * direction / 10))
+	            for (let i = num1; i < num2; i++) {
+	                if (i === 0 || i === this.el[0].clientWidth) {
+	                    // alert('clear')
+	                    // console.log(2)
+	                    this.stop()
+	                    for (let o = 0; o < this.el.length; o++) {
+	                        if (Math.round(parseFloat(this.el[o].style.left)) >= num1 && Math.round(parseFloat(this.el[o].style.left)) < num2) {
+	                            console.log(2)
+	                            this.init(o)
+	                            break
+	                        }
+	                    }
+	                    this.mytimeout = setTimeout(() => { this.run(-1) }, 3000)
+	                }
+	            }
+	        }, this.times)
+	    }
+	    // 清除自动轮播定时器，停止滚动
+	    stop () {
+	        console.log('stop')
+	        clearInterval(this.mytime)
+	    }
+	    // 拖动图片图片跟随左右移动
+	    drag (num) {
+	        for (let i = 0; i < this.el.length; i++) {
+	            this.el[i].style.left = parseFloat(this.el[i].style.left) + num + 'px'
+	        }
+	    }
+		touchstart (e) {
+			// 清除3秒后开始滚动的定时器，防止手动和自动轮播冲突
+			clearTimeout(this.mytimeout)
+			// 清除自动轮播定时器，停止滚动
+			this.stop()
+			this.clientNum[0] = e.touches[0].clientX
+			this.clientNum[2] = e.touches[0].clientX
+		}
+		touchmove (e) {
+			console.log(this.clientNum)
+			this.clientNum[1] = e.touches[0].clientX
+			this.drag(this.clientNum[1] - this.clientNum[0])
+			this.clientNum[0] = e.touches[0].clientX
+		}
+		touchend (e) {
+			if (e.view.innerWidth / 2 < Math.abs(this.clientNum[2] - this.clientNum[0])) {
+				if (this.clientNum[2] - this.clientNum[0] > 0) {
+					console.log('---l')
+				    this.run(-1)
+				} else {
+				    this.run(1)
+				    console.log('---rrrr')
+				}
+			} else {
+				this.run(-1)
+				console.log('---l')
+			}
+		}
+	}
+
+	// new类，初始化并开始滚动轮播图
+	let el = document.getElementsByClassName('childEl')
+	let parentEl = document.getElementsByClassName('parentEl')[0]
+	let bunner = new Bunner(el, 100)
+	bunner.init(0)
+	bunner.run(-1)
+	parentEl.addEventListener('touchstart',bunner.touchstart.bind(bunner), false)
+	parentEl.addEventListener('touchmove',bunner.touchmove.bind(bunner), false)
+	parentEl.addEventListener('touchend',bunner.touchend.bind(bunner), false)
+</script>

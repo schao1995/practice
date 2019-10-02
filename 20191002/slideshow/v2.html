@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>轮播图</title>
+	<link rel="stylesheet" type="text/css" href="../../public.css">
+	<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no" />
+	<style type="text/css">
+		.parentEl {
+			width: 100%;
+			height: 300px;
+			margin: 100px auto;
+			position: relative;
+			overflow: hidden;
+		}
+		.childEl {
+			width: 100%;
+			height: 100%;
+			position: absolute;
+			font-size: 200px;
+			text-align: center;
+			line-height: 300px;
+			transition-duration: 300ms;
+		}
+		.childEl:nth-child(1) {
+			background: yellow;
+			z-index: 999;
+		}
+		.childEl:nth-child(2) {
+			background: green;
+		}
+		.childEl:nth-child(3) {
+			background: pink;
+		}
+		.childEl:nth-child(4) {
+			background: red;
+		}
+		.childEl:nth-child(5) {
+			background: blue;
+		}
+	</style>
+</head>
+<body>
+	<div class="parentEl">
+		<div class="childEl">1</div>
+		<div class="childEl">2</div>
+		<div class="childEl">3</div>
+		<div class="childEl">4</div>
+		<div class="childEl">5</div>
+	</div>
+</body>
+</html>
+<script type="text/javascript">
+	class Bunner {
+	    constructor (el, times) {
+	        this.el = el
+	        this.times = times
+	        this.mytime = null
+	        this.mytimeout = null
+	        this.clientNum = [0, 0, 0]
+	        this.nextIndex = 0
+	    }
+	    // 重置每一个图片位置，保证图片位置不会过界
+	    init () {
+	    	console.log('init')
+	    	for (let i = 0; i < this.el.length; i++) {
+                // this.el[i].style.transitionDuration = '300ms'
+                this.el[i].style.zIndex = 9
+            }
+	        this.el[1].style.zIndex = 999
+        	this.el[1].style.transform = 'translate(' + this.el[0].clientWidth + 'px, 0px)'
+        	this.el[this.el.length - 1].style.transform = 'translate(' + -this.el[0].clientWidth + 'px, 0px)'
+        	this.el[0].style.transform = 'translate(' + 0 + 'px, 0px)'
+	    }
+	    // 轮播图，参数决定滚动方向
+	    run (index, direction) {
+	        console.log('run')
+	        console.log(this.el[0].style.transform)
+	        for (let i = 0; i < this.el.length; i++) {
+                this.el[i].style.transitionDuration = '300ms'
+                this.el[i].style.zIndex = 9
+            }
+            if (direction < 0) {
+            	if (index === 0) {
+            		this.el[index + 1].style.zIndex = 999
+	            	this.el[index].style.transform = 'translate(' + this.el[0].clientWidth + 'px, 0px)'
+	            	this.el[this.el.length - 1].style.transform = 'translate(' + -this.el[0].clientWidth + 'px, 0px)'
+	            	this.el[index + 1].style.transform = 'translate(' + 0 + 'px, 0px)'
+	            } else if (index === this.el.length - 1) {
+	            	this.el[index].style.zIndex = 999
+	            	this.el[0].style.transform = 'translate(' + 0 + 'px, 0px)'
+	            	this.el[index].style.transform = 'translate(' + -this.el[0].clientWidth + 'px, 0px)'
+	            	this.el[1].style.transform = 'translate(' + this.el[0].clientWidth + 'px, 0px)'
+	            } else {
+	            	this.el[index - 1].style.zIndex = 999
+	            	this.el[index - 1].style.transform = 'translate(' + 0 + 'px, 0px)'
+	            	this.el[index].style.transform = 'translate(' + this.el[0].clientWidth + 'px, 0px)'
+	            	this.el[index + 1].style.transform = 'translate(' + this.el[0].clientWidth + 'px, 0px)'
+	            }
+            } else {
+            	if (index === this.el.length - 2) {
+            		this.el[this.el.length - 1].style.zIndex = 999
+	            	this.el[index].style.transform = 'translate(' + -this.el[0].clientWidth + 'px, 0px)'
+	            	this.el[this.el.length - 1].style.transform = 'translate(' + 0 + 'px, 0px)'
+	            	this.el[0].style.transform = 'translate(' + this.el[0].clientWidth + 'px, 0px)'
+	            } else if (index === this.el.length - 1) {
+	            	this.el[0].style.zIndex = 999
+	            	this.el[0].style.transform = 'translate(' + 0 + 'px, 0px)'
+	            	this.el[index].style.transform = 'translate(' + -this.el[0].clientWidth + 'px, 0px)'
+	            	this.el[1].style.transform = 'translate(' + this.el[0].clientWidth + 'px, 0px)'
+	            } else {
+	            	this.el[index + 1].style.zIndex = 999
+	            	this.el[index].style.transform = 'translate(' + -this.el[0].clientWidth + 'px, 0px)'
+	            	this.el[index + 1].style.transform = 'translate(' + 0 + 'px, 0px)'
+	            	this.el[index + 2].style.transform = 'translate(' + this.el[0].clientWidth + 'px, 0px)'
+	            }
+            }
+            this.nextIndex = index + direction
+            if (this.nextIndex > this.el.length - 1) {
+            	this.nextIndex = 0
+            } else if (this.nextIndex < 0) {
+            	this.nextIndex = this.el.length - 1
+            }
+            this.runMoment()
+            // this.mytimeout = setTimeout(() => { this.run(this.nextIndex, 1) }, 3000)
+	        // this.mytime = setInterval(() => {
+	        // 	// if (parseFloat(this.el[3].style.left) > this.el[0].clientWidth *5) {
+	        // 	// 	alert(1)
+	        // 	// }
+	        //     for (let i = 0; i < this.el.length; i++) {
+	        //         this.el[i].style.left = parseFloat(this.el[i].style.left) + this.el[0].clientWidth * 4 * direction / 10 + 'px'
+	        //     }
+	        //     let num1 = Math.round(parseFloat(this.el[0].style.left) % this.el[0].clientWidth)
+	        //     let num2 = Math.round(parseFloat(this.el[0].style.left) % this.el[0].clientWidth + Math.abs(this.el[0].clientWidth * 4 * direction / 10))
+	        //     // console.log(1)
+	        //     // console.log(num1)
+	        //     // console.log(num2)
+	        //     // console.log(parseFloat(this.el[0].style.left))
+	        //     // console.log(this.el[0].clientWidth)
+	        //     // console.log(Math.abs(this.el[0].clientWidth * 4 * direction / 10))
+	        //     for (let i = num1; i < num2; i++) {
+	        //         if (i === 0 || i === this.el[0].clientWidth) {
+	        //             // alert('clear')
+	        //             // console.log(2)
+	        //             this.stop()
+	        //             for (let o = 0; o < this.el.length; o++) {
+	        //                 if (Math.round(parseFloat(this.el[o].style.left)) >= num1 && Math.round(parseFloat(this.el[o].style.left)) < num2) {
+	        //                     console.log(2)
+	        //                     this.init(o)
+	        //                     break
+	        //                 }
+	        //             }
+	        //             this.mytimeout = setTimeout(() => { this.run(-1) }, 3000)
+	        //         }
+	        //     }
+	        // }, this.times)
+	    }
+	    runMoment () {
+	    	this.mytimeout = setTimeout(() => { this.run(this.nextIndex, 1) }, 3000)
+	    }
+	    // 清除自动轮播定时器，停止滚动
+	    // stop () {
+	    //     console.log('stop')
+	    //     clearInterval(this.mytime)
+	    // }
+	    // 拖动图片图片跟随左右移动
+	    drag (num) {
+	        for (let i = 0; i < this.el.length; i++) {
+	        	console.log('drag')
+	        	console.log(this.el[i].style.transform)
+		        this.el[i].style.transitionDuration = '0ms'
+	        	// if (this.el[i].style.transform) {
+	        	// 	console.log(changeStr(this.el[i].style.transform))
+		        //     this.el[i].style.transform = 'translate(' + (changeStr(this.el[i].style.transform) + num) + 'px, 0px)'
+	        	// }
+	        }
+	        if (this.nextIndex === 0) {
+        		this.el[this.nextIndex].style.zIndex = 999
+        		this.el[this.el.length - 1].style.zIndex = 999
+        		this.el[this.nextIndex + 1].style.zIndex = 999
+            	this.el[this.nextIndex].style.transform = 'translate(' + (changeStr(this.el[this.nextIndex].style.transform) + num) + 'px, 0px)'
+            	this.el[this.el.length - 1].style.transform = 'translate(' + (changeStr(this.el[this.el.length - 1].style.transform) + num) + 'px, 0px)'
+            	this.el[this.nextIndex + 1].style.transform = 'translate(' + (changeStr(this.el[this.nextIndex + 1].style.transform) + num) + 'px, 0px)'
+            } else if (this.nextIndex === this.el.length - 1) {
+            	this.el[0].style.zIndex = 999
+            	this.el[1].style.zIndex = 999
+            	this.el[this.nextIndex].style.zIndex = 999
+            	this.el[0].style.transform = 'translate(' + (changeStr(this.el[0].style.transform) + num) + 'px, 0px)'
+            	this.el[this.nextIndex].style.transform = 'translate(' + (changeStr(this.el[this.nextIndex].style.transform) + num) + 'px, 0px)'
+            	this.el[1].style.transform = 'translate(' + (changeStr(this.el[1].style.transform) + num) + 'px, 0px)'
+            } else {
+            	this.el[this.nextIndex - 1].style.zIndex = 999
+            	this.el[this.nextIndex].style.zIndex = 999
+            	this.el[this.nextIndex + 1].style.zIndex = 999
+            	this.el[this.nextIndex - 1].style.transform = 'translate(' + (changeStr(this.el[this.nextIndex - 1].style.transform) + num) + 'px, 0px)'
+            	this.el[this.nextIndex].style.transform = 'translate(' + (changeStr(this.el[this.nextIndex].style.transform) + num) + 'px, 0px)'
+            	this.el[this.nextIndex + 1].style.transform = 'translate(' + (changeStr(this.el[this.nextIndex + 1].style.transform) + num) + 'px, 0px)'
+            }
+	    }
+		touchstart (e) {
+			// 清除3秒后开始滚动的定时器，防止手动和自动轮播冲突
+			clearTimeout(this.mytimeout)
+			// 清除自动轮播定时器，停止滚动
+			// this.stop()
+			this.clientNum[0] = e.touches[0].clientX
+			this.clientNum[2] = e.touches[0].clientX
+		}
+		touchmove (e) {
+			console.log('mo')
+			console.log(this.clientNum)
+			this.clientNum[1] = e.touches[0].clientX
+			this.drag(this.clientNum[1] - this.clientNum[0])
+			this.clientNum[0] = e.touches[0].clientX
+		}
+		touchend (e) {
+			if (e.view.innerWidth / 2 < Math.abs(this.clientNum[2] - this.clientNum[0])) {
+				if (this.clientNum[2] - this.clientNum[0] > 0) {
+					console.log('---l')
+				    this.run(this.nextIndex, 1)
+				} else {
+				    this.runMoment()
+				    console.log('---rrrr')
+				}
+			} else {
+				if (this.nextIndex === 0) {
+	            	this.el[this.nextIndex].style.transform = 'translate(' + 0 + 'px, 0px)'
+	            	this.el[this.el.length - 1].style.transform = 'translate(' + -this.el[0].clientWidth + 'px, 0px)'
+	            	this.el[this.nextIndex + 1].style.transform = 'translate(' + this.el[0].clientWidth + 'px, 0px)'
+	            } else if (this.nextIndex === this.el.length - 1) {
+	            	this.el[0].style.transform = 'translate(' + this.el[0].clientWidth + 'px, 0px)'
+	            	this.el[this.nextIndex].style.transform = 'translate(' + 0 + 'px, 0px)'
+	            	this.el[this.nextIndex - 1].style.transform = 'translate(' + -this.el[0].clientWidth + 'px, 0px)'
+	            } else {
+	            	this.el[this.nextIndex - 1].style.transform = 'translate(' + -this.el[0].clientWidth + 'px, 0px)'
+	            	this.el[this.nextIndex].style.transform = 'translate(' + 0 + 'px, 0px)'
+	            	this.el[this.nextIndex + 1].style.transform = 'translate(' + this.el[0].clientWidth + 'px, 0px)'
+	            }
+				setTimeout( () => { this.run(this.nextIndex, 1) }, 3000)
+				console.log('---l')
+			}
+		}
+	}
+
+	// new类，初始化并开始滚动轮播图
+	let el = document.getElementsByClassName('childEl')
+	let parentEl = document.getElementsByClassName('parentEl')[0]
+	// setTimeout( () => {
+	let bunner = new Bunner(el, 100)
+	bunner.init()
+	bunner.run(0, 1)
+	parentEl.addEventListener('touchstart',bunner.touchstart.bind(bunner), false)
+	parentEl.addEventListener('touchmove',bunner.touchmove.bind(bunner), false)
+	parentEl.addEventListener('touchend',bunner.touchend.bind(bunner), false)
+	// }, 3000)
+	//
+	function  changeStr (str) {
+		var str1 = str.split('')
+		var a = str1.splice(0, 10)
+		return parseFloat(str1.join(''))
+	}
+</script>
