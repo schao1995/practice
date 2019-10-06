@@ -1,16 +1,9 @@
-class Shape { 
-   Area:number 
-   
-   constructor(a:number) { 
-      this.Area = a 
-   } 
-} 
- 
-class Circle extends Shape { 
-   disp():void { 
-      console.log("圆的面积:  "+this.Area) 
-   } 
-}
-  
-var obj = new Circle(223); 
-obj.disp()
+var sites = {
+    site1: "Runoob",
+    site2: "Google"
+};
+var invokesites = function (obj) {
+    console.log("site1 :" + obj.site1);
+    console.log("site2 :" + obj.site2);
+};
+invokesites(sites);
