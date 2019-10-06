@@ -11868,38 +11868,16 @@
       return this
     }
 
-    var options = this.$options;
-    // resolve template/el and convert to render function
-    if (!options.render) {
-      var template = options.template;
-      if (template) {
-        if (typeof template === 'string') {
-          if (template.charAt(0) === '#') {
-            template = idToTemplate(template);
-            /* istanbul ignore if */
-            if (!template) {
-              warn(
-                ("Template element not found or is empty: " + (options.template)),
-                this
-              );
-            }
-          }
-        } else if (template.nodeType) {
-          template = template.innerHTML;
-        } else {
-          {
-            warn('invalid template option:' + template, this);
-          }
-          return this
-        }
-      } else if (el) {
-        template = getOuterHTML(el);
-      }
-      if (template) {
-        /* istanbul ignore if */
-        if (config.performance && mark) {
-          mark('compile');
-        }
+    var options = this.$options; // resolve template/el and convert to render
+    function if (!options.render) {   var template = options.template;   if
+    (template) { if (typeof template === 'string') {   if (template.charAt(0)
+    === '#') { template = idToTemplate(template); /* istanbul ignore if */ if
+    (!template) { warn( ("Template element not found or is empty: " +
+    (options.template)), this   ); }   } } else if (template.nodeType) {
+    template = template.innerHTML; } else {   { warn('invalid template
+    option:' + template, this);   }   return this }   } else if (el) {
+    template = getOuterHTML(el);   }   if (template) { /* istanbul ignore if
+    */ if (config.performance && mark) { mark('compile'); }
 
         var ref = compileToFunctions(template, {
           outputSourceRange: "development" !== 'production',

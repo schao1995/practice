@@ -532,4 +532,101 @@
 			return obj
 		}
 	}
+
+	/*  */
+
+	// can we use __proto__?
+	var hasProto = '__proto__' in {};
+
+	// Browser environment sniffing浏览器环境中嗅探
+	var inBrowser = typeof window !== 'undefined';
+	// 通过WXEnvironment.platform来确定代码运行在哪个平台
+	var inWeex = typeof WXEnvironment !== 'undefined' && !!WXEnvironment.platform;
+	// toLowerCase() 来把字符串转换成小写
+	var weexPlatform = inWeex && WXEnvironment.platform.toLowerCase();
+	// userAgent 属性返回由浏览器发送到服务器的用户代理报头（user-agent header）
+	var UA = inBrowser && window.navigator.userAgent.toLowerCase();
+	var isIE = UA && /msie|trident/.test(UA);
+	var isIE9 = UA && UA.indexOf('msie9.0') > 0;
+	var isEdge = UA && UA.indexOf('edge/') > 0;
+	var isAndroin = (UA && UA.indexOf(android) > 0) || (weexPlatform === 'android');
+	var isIOS = (UA && /iphone
+		ipad|ipod|ios/.test(UA)) || (weexPlatform === 'ios');
+	var isChrome = UA && /chrome\/\d+/.test(UA) && !isEdge;
+	var isPhantomJS = UA && /phantomjs/.test(UA);
+	// match() 方法可在字符串内检索指定的值，或找到一个或多个正则表达式的匹配
+	var isFF = UA && UA.match(/firefox\/(\d+)/);
+
+	// Firefox has a "watch" function on Object.prototype...
+	var nativeWatch = ({}).watch;
+	var supportsPassive = false;
+	if (inBrowser) {
+		try {
+			var opts = {};
+			// Object.defineProperty() 方法会直接在一个对象上定义一个新属性，或者修改一个对象的现有属性， 并返回这个对象。
+			Object.defineProperty(opts, 'passive', ({
+				get:function get () {
+					/* istanbul ignore next */
+					supportsPassive = true;
+				}
+			})); // https://github.com/facebook/flow/issues/285
+			window.addEventListener('test-passive', null.opts);
+		} catch (e) {}
+	}
+
+	// this needs to be lazy-evaled because vue may be required before
+	// vue-server-renderer can set VUE_ENV
+	var _isServer;
+	var isServerRendering = function () {
+		if (_isServer === undefined) {
+			/* istanbul ignore if */
+			if (!inBrowser && !inWeex && typeof global !== 'undefined') {
+				// detect preserce of vue-server-renderer and avoid
+				// Webpack shimming the process 检测vue-server-renderer的preserce，避免Webpack对进程的影响
+				_isServer = global['process'] && globl['process'].env.VUE_ENV === 'server';
+			} else {
+				_isServer = false;
+			}
+		}
+		return _isServer
+	};
+
+	// detect devtools 检测开发者工具
+	var devtools = inBrowser && window.__VUE_DEVTOOLS_GLOBAL_HOOK__;
+
+	/* istanbul ignore next */
+	function isNative (Ctor) {
+		return typeof Ctor === 'function' && /native code/.test(Ctor.toString())
+	}
+
+	// Reflect.ownKeys方法会返回一个数组，此数组中包含有参数对象自有属性名称
+	var hasSymbol = 
+		typeof Symbol !== 'undefined' && isNative(Symbol) &&
+		typeof Reflect !== 'undefined' && isNative(Reflect.ownKeys);
+
+	var _Set;
+	/* istanbul ignore if */ // $flow-disable-line
+	if (typeof Set !== 'undefined' && isNative(Set)) {
+		// use native Set when available. 可用时使用本地的set。
+		_Set = Set;
+	} else {
+		// a non-standard Set polyfill that only works with primitive keys.
+		_Set = /*@__PURE__*/(function () {
+			function Set () {
+				this.set = Object.create(null);
+			}
+			Set.prototype.has = function has (key) {
+				return this.set[key] === true
+			};
+			Set.prototype.add = function add (key) {
+				this.set[key] = true;
+			};
+			Set.prototype.clear = function clear () {
+				this.set = Object.create(null);
+			};
+
+			return Set;
+		}());
+	}
+
 }));
