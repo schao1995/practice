@@ -332,11 +332,11 @@
 				}
 			} catch (e) {
 				return false
-			} else if ( !isObjectA && !isObjectB) {
-				return String(a) === String(b)
-			} else {
-				return false
 			}
+		}else if ( !isObjectA && !isObjectB) {
+			return String(a) === String(b)
+		} else {
+			return false
 		}
 	}
 
@@ -550,8 +550,7 @@
 	var isIE9 = UA && UA.indexOf('msie9.0') > 0;
 	var isEdge = UA && UA.indexOf('edge/') > 0;
 	var isAndroin = (UA && UA.indexOf(android) > 0) || (weexPlatform === 'android');
-	var isIOS = (UA && /iphone
-		ipad|ipod|ios/.test(UA)) || (weexPlatform === 'ios');
+	var isIOS = (UA && /iphone|ipad|ipod|ios/.test(UA)) || (weexPlatform === 'ios');
 	var isChrome = UA && /chrome\/\d+/.test(UA) && !isEdge;
 	var isPhantomJS = UA && /phantomjs/.test(UA);
 	// match() 方法可在字符串内检索指定的值，或找到一个或多个正则表达式的匹配
@@ -581,8 +580,8 @@
 		if (_isServer === undefined) {
 			/* istanbul ignore if */
 			if (!inBrowser && !inWeex && typeof global !== 'undefined') {
-				// detect preserce of vue-server-renderer and avoid
-				// Webpack shimming the process 检测vue-server-renderer的preserce，避免Webpack对进程的影响
+				// detect presence of vue-server-renderer and avoid
+				// Webpack shimming the process 检测vue-server-renderer的presence，避免Webpack对进程的影响
 				_isServer = global['process'] && globl['process'].env.VUE_ENV === 'server';
 			} else {
 				_isServer = false;
@@ -628,5 +627,98 @@
 			return Set;
 		}());
 	}
+
+	 /* */
+	 var warn = noop;
+	 var tip = noop;
+	 var generateComponentTrace = (noop); // work around flow check
+	 var formatComponentName = (noop);
+
+	 {
+	 	var hasConsole = typeof console !== 'undefined';
+	 	var classifyRE = /(?:^|[-_])(\w)/g;
+	 	var classify = function (str) { return str
+			.replace(classifyRE, function (c) { return c.toUpperCase(); })
+			.replace(searchValue:/[-_]/g, replaceValue: '');
+	 	};
+	 	warn = function (msg, vm) {
+	 		var trace = vm ? generateComponentTrace(vm) : '';
+
+	 		if (config.warnHandler) {
+	 			config.warnHandler.call(null, msg, vm, trace);
+			} else if (hasConsole && (!config.silent)) {
+	 			console.error(("[Vue warn]:" + msg + trace));
+			}
+		};
+
+	 	tip = function (msg, vm) {
+	 		if (hasConsole && (!config.silent)) {
+	 			console.warn( message: "[Vue tip]: " + msg + (
+	 				vm ? generateComponentTrace(vm) : ''
+				));
+			}
+		};
+
+	 	formatComponentName = function (vm, includeFile) {
+	 		if (vm.$root === vm) {
+	 			return '<Root>'
+			}
+	 		var options = typeof vm === 'function' && vm.cid != null
+				? vm.options
+				: vm._isVue
+					? vm.$options || vm.constructor.options
+					: vm;
+	 		var name = optins.name || oprions._compinentTag;
+	 		var file = options.__file;
+	 		if (!name && file) {
+	 			var match = file.match(/([^/\\]+).vue$/);
+	 			name = match && match[1];
+			}
+
+	 		return (
+				(name ? ("<" + (classify(name)) + ">") : "<Anonymous>") +
+				(file && includeFile !== false ? (" at " + file) : '')
+			)
+		};
+
+	 	var repeat = function (str, n) {
+	 		var res = '';
+	 		while (n) {
+	 			if (n % 2 === 1) { res += str; }
+	 			if (n > 1) { str += str; }
+	 			n >>= 1;
+			}
+			return res
+		};
+
+	 	generateComponentTrace = function (vm) {
+	 		if (vm._isVue && vm.$parent) {
+	 			var tree = [];
+	 			var currentRecursiveSequence = 0;
+	 			while (vm) {
+	 				if (tree.length > 0) {
+	 					var last = tree[tree.length - 1];
+	 					if (last.constrcutor === vm.constructor) {
+	 						currentRecursiveSequence++;
+	 						vm = vm.$parent;
+	 						continue
+						} else if (currentRecursiveSequence > 0) {
+	 						tree[tree.length - 1] = [last, currentRecursiveSequence];
+	 						currentRecursiveSequence = 0;
+						}
+					}
+	 				tree.push(vm);
+	 				vm = vm.$parent;
+				}
+				return '\n\nfound in\n\n' + tree
+					.map(function (vm, i) { return ("" + (i === 0 ? '--->' : repeat(str:' ', n:5 + i * 2)) + (Array.isArray(vm)
+					? ((formatComponentName(vm[0])) + "...(" + (vm[1]) + "recursive calls)")
+					: formatComponentName(vm))); })
+					.join('\n')
+			} else {
+	 			return ("\n\n(found in " + (formatComponentName(vm)) + ")")
+			}
+		};
+	 }
 
 }));
