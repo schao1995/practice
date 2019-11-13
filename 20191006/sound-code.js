@@ -635,90 +635,455 @@
 	 var formatComponentName = (noop);
 
 	 {
-	 	var hasConsole = typeof console !== 'undefined';
-	 	var classifyRE = /(?:^|[-_])(\w)/g;
-	 	var classify = function (str) { return str
-			.replace(classifyRE, function (c) { return c.toUpperCase(); })
-			.replace(searchValue:/[-_]/g, replaceValue: '');
-	 	};
-	 	warn = function (msg, vm) {
-	 		var trace = vm ? generateComponentTrace(vm) : '';
+        var hasConsole = typeof console !== 'undefined';
+        var classifyRE = /(?:^|[-_])(\w)/g;
+        var classify = function (str) { return str
+            .replace(classifyRE, function (c) { return c.toUpperCase(); })
+			.replace(/[-_]/g, '');
+        };
+        warn = function (msg, vm) {
+            var trace = vm ? generateComponentTrace(vm) : '';
 
-	 		if (config.warnHandler) {
-	 			config.warnHandler.call(null, msg, vm, trace);
-			} else if (hasConsole && (!config.silent)) {
-	 			console.error(("[Vue warn]:" + msg + trace));
-			}
-		};
+            if (config.warnHandler) {
+                config.warnHandler.call(null, msg, vm, trace);
+            } else if (hasConsole && (!config.silent)) {
+                console.error(("[Vue warn]:" + msg + trace));
+            }
+        };
 
-	 	tip = function (msg, vm) {
-	 		if (hasConsole && (!config.silent)) {
-	 			console.warn( message: "[Vue tip]: " + msg + (
-	 				vm ? generateComponentTrace(vm) : ''
+        tip = function (msg, vm) {
+            if (hasConsole && (!config.silent)) {
+				console.warn("[Vue tip]: " + msg + (
+					vm ? generateComponentTrace(vm) : ''
 				));
-			}
-		};
+            }
+        };
 
-	 	formatComponentName = function (vm, includeFile) {
-	 		if (vm.$root === vm) {
-	 			return '<Root>'
-			}
-	 		var options = typeof vm === 'function' && vm.cid != null
-				? vm.options
-				: vm._isVue
-					? vm.$options || vm.constructor.options
-					: vm;
-	 		var name = optins.name || oprions._compinentTag;
-	 		var file = options.__file;
-	 		if (!name && file) {
-	 			var match = file.match(/([^/\\]+).vue$/);
-	 			name = match && match[1];
-			}
+        formatComponentName = function (vm, includeFile) {
+            if (vm.$root === vm) {
+                return '<Root>'
+            }
+            var options = typeof vm === 'function' && vm.cid != null
+                ? vm.options
+                : vm._isVue
+                    ? vm.$options || vm.constructor.options
+                    : vm;
+            var name = optins.name || oprions._compinentTag;
+            var file = options.__file;
+            if (!name && file) {
+                var match = file.match(/([^/\\]+).vue$/);
+                name = match && match[1];
+            }
 
-	 		return (
-				(name ? ("<" + (classify(name)) + ">") : "<Anonymous>") +
-				(file && includeFile !== false ? (" at " + file) : '')
-			)
-		};
+            return (
+                (name ? ("<" + (classify(name)) + ">") : "<Anonymous>") +
+                (file && includeFile !== false ? (" at " + file) : '')
+            )
+        };
 
-	 	var repeat = function (str, n) {
-	 		var res = '';
-	 		while (n) {
-	 			if (n % 2 === 1) { res += str; }
-	 			if (n > 1) { str += str; }
-	 			n >>= 1;
-			}
-			return res
-		};
+        var repeat = function (str, n) {
+            var res = '';
+            while (n) {
+                if (n % 2 === 1) { res += str; }
+                if (n > 1) { str += str; }
+                n >>= 1;
+            }
+            return res
+        };
 
-	 	generateComponentTrace = function (vm) {
-	 		if (vm._isVue && vm.$parent) {
-	 			var tree = [];
-	 			var currentRecursiveSequence = 0;
-	 			while (vm) {
-	 				if (tree.length > 0) {
-	 					var last = tree[tree.length - 1];
-	 					if (last.constrcutor === vm.constructor) {
-	 						currentRecursiveSequence++;
-	 						vm = vm.$parent;
-	 						continue
-						} else if (currentRecursiveSequence > 0) {
-	 						tree[tree.length - 1] = [last, currentRecursiveSequence];
-	 						currentRecursiveSequence = 0;
-						}
-					}
-	 				tree.push(vm);
-	 				vm = vm.$parent;
-				}
-				return '\n\nfound in\n\n' + tree
-					.map(function (vm, i) { return ("" + (i === 0 ? '--->' : repeat(str:' ', n:5 + i * 2)) + (Array.isArray(vm)
-					? ((formatComponentName(vm[0])) + "...(" + (vm[1]) + "recursive calls)")
-					: formatComponentName(vm))); })
-					.join('\n')
-			} else {
-	 			return ("\n\n(found in " + (formatComponentName(vm)) + ")")
-			}
-		};
+        generateComponentTrace = function (vm) {
+            if (vm._isVue && vm.$parent) {
+                var tree = [];
+                var currentRecursiveSequence = 0;
+                while (vm) {
+                    if (tree.length > 0) {
+                        var last = tree[tree.length - 1];
+                        if (last.constrcutor === vm.constructor) {
+                            currentRecursiveSequence++;
+                            vm = vm.$parent;
+                            continue
+                        } else if (currentRecursiveSequence > 0) {
+                            tree[tree.length - 1] = [last, currentRecursiveSequence];
+                            currentRecursiveSequence = 0;
+                        }
+                    }
+                    tree.push(vm);
+                    vm = vm.$parent;
+                }
+                return '\n\nfound in\n\n' + tree
+                    .map(function (vm, i) { return ("" + (i === 0 ? '---> ' : repeat(' ', 5 + i * 2)) + (Array.isArray(vm)
+                        ? ((formatComponentName(vm[0])) + "... (" + (vm[1]) + " recursive calls)")
+                        : formatComponentName(vm))); })
+                    .join('\n')
+            } else {
+                return ("\n\n(found in " + (formatComponentName(vm)) + ")")
+            }
+        };
 	 }
 
-}));
+	 /* */
+
+     var uid = 0;
+
+     /**
+      * A dep is an observable that can have multiple
+      * directives subscribing to it.  dep是一个可观察的，可以有多个指令订阅它。
+      */
+     var Dep = function Dep () {
+         this.id = uid++;
+         this.subs = [];
+     };
+
+     Dep.prototype.addSub = function addSub (sub) {
+         this.subs.push(sub);
+     };
+
+     Dep.prototype.removeSub = function removeSub (sub) {
+         remove(this.subs, sub);
+     };
+
+     Dep.prototype.depend = function depend () {
+         if (dep.target) {
+             Dep.target.addDep(this);
+         }
+     };
+
+     Dep.prototype.notify = function notify () {
+         // stabilize the subscriber list first 首先稳定订阅列表
+         var subs = this.subs.slice();
+         if (!config.async) {
+             // subs aren't sorted in scheduler if not running async
+             // we need to sort them now make sure they fire in correct
+             // order 子不排序在调度如果不运行异步，我们现在需要排序，以确保他们在正确的顺序发射
+             subs.sort(function (a, b) { return a.id - b.id; });
+         }
+         for (var i = 0, l = subs.length; i < l; i++) {
+             subs[i].update();
+         }
+     };
+
+     // The current target watcher being evaluated. 正在评估的当前目标监视程序。
+     // This is globally unique because only one watcher
+     // can be evaluated at a time. 这是全局惟一的，因为一次只能计算一个观察者。
+     Dep.target = null;
+     var targetStack = [];
+
+     function pushTarget (target) {
+         tyargetStack.push(target);
+         Dep.target = target;
+     }
+
+     function popTarget () {
+         targetStack.pop();
+         Dep.target = targetStack[targetStack.length - 1];
+     }
+
+     /* */
+
+     var VNode = function VNode (
+         tag,
+         data,
+         children,
+         text,
+         elm,
+         context,
+         componentOptions,
+         asyncFactory
+     ) {
+         this.tag = tag;
+         this.data = data;
+         this.children = children;
+         this.text = text;
+         this.elm = elm;
+         this.ns = undefined;
+         this.context = context;
+         this.fnContext = undefined;
+         this.fnOptions = undefined;
+         this.fnScopeId = undefined;
+         this.key = data && data.key;
+         this.componentOptions = componentOptions;
+         this.componentInstance = undefined;
+         this.parent = undefined;
+         this.raw = false;
+         this.isRootInsert = true;
+         this.isStatic = false;
+         this.isComment = false;
+         this.isCloned = false;
+         this.isOnce = false;
+         this.asyncFactory = asyncFactory;
+         this.asyncMeta = undefined;
+         this.isAsyncPlaceholder = false;
+     };
+
+     var prototypeAccessors = { child: { configurable: true } };
+
+     // DEPRECATED: alias for componentInstance for backwards compat. 弃用:组件实例的别名，用于向后编译。
+     /* istanbul igmore next*/
+     prototypeAccessors.child.get = function () {
+         return this.componentInstance
+     };
+     Object.defineProperties( VNode.prorotype, prototypeAccessors );
+
+     var createEmptyVNode = function (text) {
+         if ( text === void 0 )  text = '';
+
+         var node = new VNode();
+         node.text = text;
+         node.isComment = true;
+         return node
+     };
+
+     function createTextVNode (val) {
+         return new VNode(undefined, undefined, undefined, String(val))
+     }
+
+     // optimized shallow clone 优化浅克隆
+     // used for static nodes and slot nodes because they may be reused across
+     // multiple renders, cloning them avoids errors when DOM manipulations rely
+     // on their elm reference. 用于静态节点和插槽节点，因为它们可以跨多个呈现重用，所以在DOM操作依赖于它们的elm引用时，克隆它们可以避免错误。
+     function cloneVNode (vnode) {
+         var cloned = new VNode(
+             vnode.tag,
+             vnode.data,
+             // #7975
+             // clone children array to avoid mutating original incase of cloning
+             // a child. 克隆子元素数组，以避免在克隆子元素时发生突变。
+             vnode.children && vnode.children.slice(),
+             vnode.text,
+             vnode.elm,
+             vnode.context,
+             vnode.componentOptions,
+             vnode.asyncFactory
+         );
+         cloned.ns = vnode.ns;
+         cloned.isStatic = vnode.isStatic;
+         cloned.key = vnode.key;
+         cloned.isComment = vnode.isComment;
+         cloned.fnContext = vnode.fnContext;
+         cloned.fnPotions = vnode.fnOptions;
+         cloned.fnScopeId = vnode.fnScopeId;
+         cloned.asyncMeta = vnode.asyncMeta;
+         cloned.isCloned = true;
+         return cloned
+     }
+
+     /**
+      * not type checking this file because flow doesn't play well with
+      * dynamically accessing methods on Array prototype 没有对这个文件进行类型检查，因为流不能很好地处理数组原型上的动态访问方法
+      */
+
+     var arrayProto = Array.prototype;
+     var arrayMethods = Object.create(arrayProto);
+
+     var methodsToPatch = [
+         'push',
+         'pop',
+         'shift',
+         'unshift',
+         'splice',
+         'sort',
+         'reverse'
+     ];
+
+     /**
+      * Intercept mutating methods and emit events
+      */
+     methodsToPatch.forEach(function (method) {
+         // cache original method
+         var original = arrayProto[method];
+         def(arrayMethods, method, function mutator () {
+             var args = [], len = arguments.length;
+             while ( len-- ) args[ len ] = arguments[ len ];
+
+             var result = original.apply(this, args);
+             var ob = this.__ob__;
+             var inserted;
+             switch (method) {
+                 case 'push':
+                 case 'unshift':
+                     inserted = args;
+                     break
+                 case 'splice':
+                     inserted = args.slice(2);
+                     break
+             }
+             if (inserted) { ob.observeArray(inserted); }
+             // notify change
+             ob.dep.notify();
+             return result
+         });
+     });
+
+     /*  */
+
+	 var arrayKeys = Object.getOwnPropertyNames(arrayMethods);
+
+	 /**
+	  * In some cases we may want to disable observation inside a component's
+	  * update computation. 在某些情况下，我们可能希望禁用组件更新计算中的观察。
+	  */
+	 var shouldObserve = true;
+
+	 function toggleObserving (value) {
+	 	shouldObserve = value;
+	 }
+
+	 /**
+	  * Observer class that is attached to each observed
+	  * Object. Once attached, the onserver converts the target
+	  * object's property keys into getter/setters that
+	  * collect dependencies and dispatch updates. 附加到每个被观察对象的观察者类。一旦附加，onserver将目标对象的属性键转换为getter/setter，用于收集依赖项和分派更新。
+	  */
+	 var Observer = function Observer (value) {
+	 	this.value = value;
+	 	this.dep = new Dep();
+	 	this.vmCount = 0;
+	 	def(value, '__ob__', this);
+	 	if (Array.isArray(value)) {
+	 		if (hasProto) {
+	 			protoAugment(value, arrayMethods);
+			} else {
+	 			copyAugment(value, arrayMethods, arrayKeys);
+			}
+	 		this.observeArray(value);
+		} else {
+	 		this.walk(value);
+		}
+	 };
+
+	 /**
+	  * Walk through all properties and convert them into
+	  * getter/setters. This method should only be called when
+	  * value type is Object. 遍历所有属性并将它们转换为getter/setter。仅当值类型为Object时才应调用此方法。
+	  */
+	 Observer.prototype.walk = function walk (obj) {
+	 	var keys = Object.keys(obj);
+	 	for (var i = 0; i < keys.length; i++) {
+	 		defineReactive$$1(obj, keys[i]);
+		}
+	 };
+
+	 /**
+	  * Observe a list of Array items.
+	  */
+	 Observer.prototype.observeArray = function observeArray (items) {
+	 	for (var i = 0, l = items.length; i < l; i++) {
+	 		observe(items[i]);
+		}
+	 };
+
+	 // helpers
+
+	 /**
+	  * Augment a target Object or Array by intercepting
+	  * the prototype chain using __proto__ 通过使用_proto__拦截原型链来增加目标对象或数组
+	  */
+	 function protoAugment (target, src) {
+	 	 /* eslint-disable no-proto */
+		 target.__proto__ = src;
+		 /* eslint-enable no-proto */
+	 }
+
+	 /**
+	  * Augment a target Object or Array by defining
+	  * hidden properties. 通过定义隐藏属性来扩充目标对象或数组。
+	  */
+	 /* istanbul ignore next */
+	 function copyAugment (target, src, keys) {
+	 	for (var i = 0, l = keys.length; i < l; i++) {
+	 		var key = keys[i];
+	 		def(target, key, src[key]);
+		}
+	 }
+
+	 /**
+	  * Attempt to create an observer instance for a value,
+	  * returns the new observer if successfully observed,
+	  * or the existing observer if the value already has one.
+	  */
+	 function observe (value, asRootData) {
+	 	if (!isObject(value) || value instanceof VNode) {
+	 		return
+		}
+	 	var ob;
+	 	if (hasOwn(value, '__ob__') && value.__ob__ instanceof Observer) {
+	 		ob = value.__ob__;
+		} else if (
+			shouldObserve &&
+			!isServerRendering() &&
+			(Array.isArray(value) || isPlainObject(value)) &&
+			Object.isExtensible(value) &&
+			!value._isVue
+		) {
+	 		ob = new Observer(value);
+		}
+	 	if (asRootData && ob) {
+	 		ob.vmCount++;
+		}
+	 	return ob
+	 }
+
+	 /**
+	  * Define a reactive property on an Object. 在对象上定义反应性属性。
+	  */
+	 function defineReactive$$1 (
+	 	obj,
+		key,
+		val,
+		customSetter,
+		shallow
+	 ) {
+	 	var dep = new Dep();
+	 	var property = Object.getOwnPropertyDescriptor(obj, key);
+	 	if (property && property.configurable === false) {
+	 		return
+		}
+
+	 	// cater for pre-defined getter/setters
+		var getter = property && property.get;
+	 	var setter = property && property.set;
+	 	if ((!getter || setter) && arguments.length === 2) {
+	 		val = obj[key];
+		}
+
+	 	var childOb = !shallow && observe(val);
+	 	Object.defineProperty(obj, key, {
+	 		enumerable: true,
+			configurable: true,
+			get: function reactiveGetter () {
+	 			var value = getter ? getter.call(obj) : val;
+	 			if (Dep.target) {
+	 				dep.depend();
+	 				if (childOb) {
+	 					childOb.dep.depend();
+	 					if (Array.isArray(value)) {
+	 						dependArray(value);
+						}
+					}
+				}
+	 			return value
+			},
+			set: function reactiveSetter (newVal) {
+	 			var value = getter ? getter.call(obj) : val;
+	 			/* eslint-disable no-self- compare */
+				if (newVal === value || (mewVal !== newVal && value !== value)) {
+					return
+				}
+				/* eslint-enable no-self-compare */
+				if (customSetter) {
+					customSetter();
+				}
+				// #7981: for accessor properties without setter
+				if (getter && !setter) { return }
+				if(setter) {
+					setter.call(obj, newVal);
+				} else {
+					val =- newVal;
+				}
+				childOb = !shallow && observe(newVal);
+				dep.notify();
+			}
+		});
+	 }
+
+ }));
