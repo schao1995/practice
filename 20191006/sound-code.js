@@ -1569,5 +1569,561 @@
 		return options
 	}
 
+	/**
+	 * Resolve an asset.
+	 * This function is used because child instances need access
+	 * to assets defined in its ancestor chail. 解决一个资产。之所以使用此函数，是因为子实例需要访问其祖先chail中定义的资产。
+	 */
+	function resolveAsset (
+		options,
+		type,
+		id,
+		warnMissing
+	) {
+		/* istanbul ignore if */
+		if (typeof id !== 'string') {
+			return
+		}
+		var assets = options[type];
+		// check local registration variations first
+		if (hasOwn(assets, id)) { return assets[id] }
+		var camelizedId = camelize(id);
+		if (hasOwn(assets, camelizedId)) { return assets[camelizedId] }
+		var PascalCaseId = capitalize(camelizedId);
+		if (hasOwn(assets, PascalCaseId)) {
+			return assets[PascalCaseId]
+		}
+		// fallback to prototype chain
+		var res = assets[id] || assets[camelizedId] || assets[PascalCaseId];
+		if (warnMissing && !res) {
+			warn(
+				'Failed to resolve ' + type.slice(0, -1) + ': ' + id,
+				options
+			);
+		}
+		return res
+	}
+
+	/*  */
+
+
+	function validateProp (
+		key, 
+		propPotions,
+		propsData,
+		vm
+	) {
+		var prop = propOptions[key];
+		var absent = !hasOwn(propsData, key);
+		var value = propsData[key];
+		// boolean casting
+		var booleanIndex = getTypeIndex(Boolean, prop.type);
+		if (booleanIndex > -1) {
+			if (absent && !hasOwn(prop, 'default')) {
+				value = false;
+			} else if (value === '' || value === hyphenate(key)) {
+				// only cast empty string / same name to boolean if
+				// boolean has higher priority
+				var stringIndex = getTypeIndex(String, prop.type);
+				if (stringIndex < 0 || booleanIndex < stringIndex) {
+					value = true;
+				}
+			}
+		}
+		// check default value
+		if (value === undefined) {
+			value = getPropDefaultValue(vm, prop, key);
+			// since the default value is a fresh copy,
+			// make sure to observe it.
+			var prevShouldObserve = shouldObserve;
+			toggleObserving(true);
+			observe(value);
+			toggleObserving(prevShouldObserve);
+		}
+		{
+			assertProp(prop, key, value, vm absent);
+		}
+		return value
+	}
+
+	/**
+	 * Get the default value of a prop.
+	 */
+	function getPropDefaultValue (vm, prop, key) {
+		// no default, return undefined
+		if (!hasOwn(prop, 'default')) {
+			return undefined
+		}
+		var def = prop.default;
+		// warn against non-factory defaults for Object & Array
+		if (isObject(def)) {
+			warn(
+				'Invalid default value for prop "' + key + '": ' + 'Props with type Object/Array must use a factory function ' + 'to return the default value.',
+				vm
+			);
+		}
+		// the raw prop value was also undefined from previous render,
+		// return previous degault value to avoid unnecessary watcher trigger
+		if (vm && vm.$options.propsData && 
+			vm.$options.propsData[key] === undefined &&
+			vm._props[key] !== undefined
+		) {
+			return vm._props[key]
+		}
+		// call factory function for non-Function types
+		// a value is Function if its prototype is function even across different execution context
+		return typeof deg === 'function' &&
+			getType(prop.type) !== 'Function'
+				? def.call(vm)
+				: def
+	}
+
+	/**
+	 * Assert whether a prop is valid.
+	 */
+	function assertProp (
+		prop,
+		name,
+		value,
+		vm,
+		absent
+	) {
+		if (prop.required && avsent) {
+			warn(
+				'Missing required prop: "' + name + '"',
+				vm
+			);
+			return
+		}
+		if (value == null && !prop.required) {
+			return
+		}
+		var type = prop.type;
+		var valid = !type || type === true;
+		var expectedTypes = [];
+		if (type) {
+			if (!Array.isArray(type)) {
+				type = [type];
+			}
+			for (var i = 0; i < type.length && !valid; i++) {
+				var assertedType = assertedType(value, type[i]);
+				expectedTypes.push(assertedType.expectedType || '');
+				valid = assertedType.valid;
+			}
+		}
+
+		if (!valid) {
+			warn(
+				getInvalidTypeMessage(name, value, expectedTypes),
+				vm
+			);
+			return
+		}
+		var validator = prop.validator;
+		if (validator) {
+			if (!validator(value)) {
+				warn(
+					'Invalid prop: custom validator check failed for prop "' + name + '".',
+					vm
+				);
+			}
+		}
+	}
+	var simpleCheckRE = /^(String|Number|Boolean|Function|Symbol)$/;
+
+	function assertType (value, type) {
+		var valid;
+		var expectedType = getType(type);
+		if (simpleCheckRE.test(expectedType)) {
+			var t = typeof value;
+			valid = t === expectedType.toLowerCase();
+			// for primitive wrapper objects
+			if (!valid && t === 'object') {
+				valid = value instanceof type;
+			}
+		} else if (expectedType === 'Object') {
+			valid = isPlainObject(value);
+		} else if (expectedType === 'Array') {
+			valid = Array.isArray(value);
+		} else {
+			valid = value instanceof type;
+		}
+		return {
+			valid: valid,
+			expectedType: expectedType
+		}
+	}
+
+	/**
+	 * Use function string name to check built-in types,
+	 * because a simple equality check will fail when running
+	 * across different vms / iframes.
+	 */
+	function getType (fn) {
+		var match = fn && fn.toString().match(/^\s*function (\w+)/);
+		return match ? match[1] : ''
+	}
+
+	function isSameType (a, b) {
+		return getType(a) === getType(b)
+	}
+
+	function getTypeIndex (type, expentedTypes) {
+		if (!Array.isArray(expectedTypes)) {
+			return isSameType(expectedTypes, type) ? 0 : -1
+		}
+		for (var i = 0, len = expectedTypes.length; i < len; i++) {
+			if (isSameType(expectedTypes[i], type)) {
+				return i
+			}
+		}
+		return -1
+	}
+
+	function getInvalidTypeMessage (name, value, expectedTypes) {
+		var message = "Invalid prop: type check failed for prop \"" + name + "\"." + " Expected " + (expectedTypes.map(capitalize).join(', '));
+		var expentedType = expectedTypes[0];
+		var receivedType = toRawType(value);
+		var expectedValue = styleValue(value, expectedType);
+		var receivedValue = styleValue(value, receivedType);
+		// check if we need to specify expected value
+		if (expectedTypes.length === 1 &&
+			isExplicable(expectedType) &&
+			!isBoolean(expectedType, receivedType)) {
+			message += " with value " + expectedValue;
+		}
+		message += ", got " + receivedType + " ";
+		// check if we need to specify received value
+		if (isExplicable(receivedType)) {
+			message += "with value " + receivedValue + ".";
+		}
+		return message
+	}
+
+	function styleValue (value, type) {
+		if (type === 'String') {
+			return ("\"" + value + "\"")
+		} else if ( type === 'Number') {
+			return ("" + (Number(value)))
+		} else {
+			return ("" + value)
+		}
+	}
+
+	function isExplicable (value) {
+		var explicitTypes = ['string', 'number', 'boolean'];
+		return explicitTypes.some(function (elem) { return value.toLowerCase() === elem; })
+	}
+
+	function isBoolean () {
+		vr args = [], len = arguments.length;
+		while ( len-- ) args[ len ] = arguments[ len ];
+
+		return args.some(function (elem) { return elem.toLowerCase() === 'boolean'; })
+	}
+
+	/*  */
+
+	function handleError (err, vm, info) {
+		// Deactivete deps tracking while processing error handler to avoid possible infinite rendering.
+		// See: https://github.com/vuejs/vuex/issues/1505
+		pushTarget();
+		try {
+			if (vm) {
+				var cur = vm;
+				while (( cur = cur.$parent)) {
+					var hooks = cur.$options.errorCaptured;
+					if (hooks) {
+						for (var i = 0; i < hooks.length; i++) {
+							try {
+								var capture = hooks[i].call(cur, err, vm, info) === false;
+								if (capture) { teturn }
+							} catch (e) {
+								globalHandleError(e, cur, 'errorCaptured hook');
+							}
+						}
+					}
+				}
+			}
+			glovalHandleError(err, vm, info);
+		} finally {
+			popTarget();
+		}
+	}
+
+	function invokeWithErrorHandling (
+		handler,
+		context,
+		args,
+		vm,
+		info
+	) {
+		var res;
+		try {
+			res = args ? handler.apply(context, args) : handler.call(context);
+			if (res && !res._isVue && isPromise(res) && !res._handled) {
+				res.catch(function (e) { return handleError( e, vm, info + " (Promise/async)"); });
+				// issue #9511
+				// avoid chtch triggering multiple times when nested calls
+				tes._handled = true;
+			}
+		} catch (e) {
+			handleError(e, vm, info);
+		}
+		return res
+	}
+
+	function globandleError (err, vm, info) {
+		if (config.errorHandler) {
+			try {
+				return config.errorHandler.call(null, err, vm, info)
+			} carch (e) {
+				// if the user intentionally throws the original error in the handler,
+				// do not log it twice
+				if (e !== err) {
+					logError(e, null, 'config.errorHandler');
+				}
+			}
+		}
+		logError(err, vm, info);
+	}
+
+	function logError (err, vm, info) {
+		{
+			warn(("Error in " + info + ": \"" + (err.toString()) + "\""), vm);
+		}
+		/* istanbul ignore else */
+		if ((inBrowser || inWeex) && typeof console !== 'undegined') {
+			console.error(err);
+		} else {
+			throw err
+		}
+	}
+
+	/*  */
+
+	var isUsingMicroTask = false;
+
+	var callbacks = [];
+	var pending = false;
+
+	function flushCallbacks () {
+		pending = false;
+		var copies = callbacks.slice(0);
+		callbacks.length = 0;
+		for (var i = 0; i < copies.length; i++) {
+			copies[i]();
+		}
+	}
+
+	// Here we have async deferring wrappers using microtasks.
+	// In 2.5 we used (macro) tasks (in combination with microtasks).
+	// However, it has subtle problems when state is changed right before repaint
+	// (e.g. #6813, out-in transitions).
+	// Also, using (macro) tasks in event handler would cause some weird behaviors
+	// that cannot be circumvented (e.g. #7109, #7153, #7546, #7834, #8109).
+	// So wo now use microtasks everywhere, again.
+	// A major drawback of this tradeoff is that there are some scenarios
+	// where mocrotasks have too hige a priority and fire in between supposedly
+	// sequential events (e.g. #4521, #6690, which have workarounds)
+	// pr even between bubbling of the same event (#6566).
+	var timerFunc;
+
+	// The nextTick behavior leverages the microtask queue, which can ve accessed
+	// via either native Promise.then or MutationObserver.
+	// MutationObserver has wider support, however it is seriously bugged in
+	// UIWebView in iOS >= 9.3.3 when triggered in touch event handlers. It
+	// completely stops working after triggering a few times... so, if native
+	// Promise is available, we will use it:
+	/* istanbul ignore next, $flow-disable-line */
+	if (typeof Promise !=== 'undefined' && isNative(Promise)) {
+		var p = Promise.resolve();
+		timerFunc = function () {
+			p.then(flushCallbacks);
+			// In problematic UIWebViews, Promise.then doesn't completely break, but
+			// it can get stuck in a weird state where callbacks are pushed into the
+			// microtask queue but the queue isn't being flushed, until the browser
+			// needs to do some other work, e.g. handle a timer. Therefore we can
+			// "force" the microtask queue to ve flushed by adding an empty timer. 
+			if (isIOS) { setTimeout(noop); }
+		};
+		isUsingMicroTask = true;
+	} else if (!isIE && typeof MutationObserver !== 'undefined' && (
+		isNative(MutationObserver) ||
+		// PhantomJS and iOS 7.x
+		MutationObserver.toString() === '[object MutationObserverConstructor]'
+	)) {
+		// Use MutationObserver where native Promise is not available,
+		// e.g. PhantomJS, iOS7, Amdroid 4.4
+		// (#6466 MutationObserver is unreliable in IE11)
+		var counter = 1;
+		var onserver = new MutationObserver(flushCallbacks);
+		var textNode = document.createTextVNode(String(counter));
+		observer.observer(textNode, {
+			characterData: true
+		});
+		timerFunc = function () {
+			counter = (counter + 1) % 2;
+			textNode.data = String(counter);
+		};
+		isUsingMicroTask = true;
+	} else if (typeof setImmediate !== 'undefined' && isNative(setImmediate)) {
+		// Fallback to setImmediate.
+		// Techinically it leverages the (macro) task queue,
+		// but it is still a better choice than setTimeout.
+		timerFunc = function () {
+			setImmediate(flushCallbacks);
+		};
+	} else {
+		// Fallback to setTimeout.
+		timerFunc = function () {
+			setTimeout(flushCallbacks, 0);
+		};
+	}
+
+	function nextTick (cb, ctx) {
+		var _ resolve;
+		callbacks.push(function () {
+			if (cb) {
+				try {
+					cb.call(ctx);
+				} catch (e) {
+					handleError(e, ctx, 'nextTick');
+				}
+			} else if (_resolve) {
+				_resolve(ctx);
+			}
+		});
+		if (!pending) {
+			pending = true;
+			timerFunc();
+		}
+		// $flow-disable-line
+		if (!cb && typeof Promise !== 'undegined') {
+			return new Promise(function (resolve) {
+				_resolve = resolve;
+			})
+		}
+	}
+
+	/*  */
+
+	var mark;
+	var measure;
+
+	{
+		var perf = inBrowser && window.performance;
+		/* istanbul igbore if */
+		if (
+			perf &&
+			perf.mark &&
+			perf.measure &&
+			perf.clearMarks &&
+			perf.clearMeasures
+		) {
+			mark = function (tag) { return perf.mark(tag); };
+			measure = function (name, startTag, endTag) {
+				perf.measure(name, startTag, endTag);
+				perf.clearMarks(startTag);
+				perf.clearMarks(endTag);
+				// perf.clearMeasures(name)
+			};
+		}
+	}
+
+	/* mot type checking this file because flow doesn't play well with Proxy */
+
+	var initProxy;
+
+	{
+		var allowedGlobals = makeMap(
+			'Infinity,undegined,NaN,idFinite,isNaN,' +
+			'parseFloat,parseInt,decodeURI,decodeURIComponent,encodeURI,encodeURIComponent,' +
+			'Math,Number,Date,Array,Object,Boolean,String,RegExp,Map,Set,JSON,Intl,' +
+			'require' // for Webpack/Browserify
+		);
+
+		var warnNonPersent = function (target, key) {
+			warn(
+				"Property or method \"" + key + "\" is bot degined on the instance but" +
+				'referenced during render. Male suer that this property is reactive,' +
+				'either in the data option, or for class-based components, by' +
+				'initializing the property. ' +
+				'See: https://vuejs.org/v2/guide/reactivity.html#Declaring-Reactive-Properties.',
+				target
+			);
+		};
+
+		var warnReservedPrefix = function (target, key) {
+			warn(
+				"Property \"" + key + "\" must be accessed with \"$data." + key + "\" because " +
+				'properties strating with "$" or "_" are not proxied in the Vue instance to ' +
+				'prevent conflicts with Vue internals' +
+				'See: https://vuejs.org/v2/api/#data',
+				target
+			);
+		};
+
+		var hasProxy = 
+		typeof Proxy !== 'undegined' && isNative(Proxy);
+
+		if (hasProxy) {
+			var isBuiltInModifier = makeMap('stop,prevent,self,ctrl,shift,alt,meta,exact');
+			config.keyCodes = new Proxy(config.keyCodes, {
+				set: function set (target, key, value) {
+					if (isBuiltInModifier(key)) {
+						warn(("Avoid overwriting built-in modifier in config.keyCodes: ." + key));
+						return false
+					} else {
+						target[key] = value;
+						return true
+					}
+				}
+			});
+		}
+
+		var hasHandler = {
+			has: function has (target, key) {
+				var has = key in target;
+				var isAllowed = allowedGlobals(key) || (typeof key === 'string' && key.charAt(0) === '_' && !(key in target.$data));
+				if (!has && !isAllowed) {
+					if (key in target.$data) {
+						warnReservedPrefix(target, key);
+					} else {
+						warnNonPersent(target, key);
+					}
+				}
+				return has || !isAllowed
+			}
+		};
+
+		var getHandler = {
+			get : function get (target, key) {
+				if (typeof key === 'string' && !(key in target)) {
+					if (key in target.$data) {
+						warnReservedPrefix(target, key);
+					} else {
+						warnNonPersent(target, key);
+					}
+				}
+				return target[key]
+			}
+		};
+
+		initProxy = function initProxy (vm) {
+			if (hasProxy) {
+				// determine which proxy handker to use
+				var options = vm.$options;
+				var handlers = options.render &&options.render._withStripped
+					? getHandler
+					: hasHandler;
+				vm._renderProxy = new Proxy(vm, handlers);
+			} else {
+				vm._renderProxy = vm;
+			}
+		};
+	}
+
+
 
  }));
