@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>毛毛虫</title>
+</head>
+<body>
+    <canvas style="border: 1px solid #111111" width="500" height="500" id="canvas"></canvas>
+</body>
+</html>
+<script>
+var ctx;
+/*function draw(){
+    var canvas = document.getElementById('canvas');
+    if (!canvas.getContext) return;
+    var ctx = canvas.getContext("2d");
+    ctx.beginPath();
+    ctx.strokeStyle = "#ffd04b";
+    ctx.lineWidth = 2;
+    ctx.moveTo(20, 400);
+    ctx.lineTo(60, 400);
+    // ctx.quadraticCurveTo(100,400,100,300);
+    ctx.bezierCurveTo(110,400,110,300,160,300);
+    ctx.bezierCurveTo(210,300,210,400,260,400);
+    // ctx.quadraticCurveTo(160,400,200,400);
+    ctx.lineTo(300, 400)
+    ctx.stroke();
+
+}
+draw();
+window.requestAnimationFrame(draw);*/
+
+var lineWidth = 200; // 线长
+var startPosition = 200; // 头起始位置
+var endPosition = 0; // 尾起始位置
+var direction = 1; // 方向
+var x = 100; // 曲线中心顶点x轴
+var y = 100; // 曲线中心顶点y轴
+var headMove = 0; // 虫头移动距离
+var tailMove = 0; // 虫尾移动距离
+var headLength = 20; // 头长
+var isStretch = false; // 弯曲，还是伸直
+var isLimit = false; // 是否触碰临界点
+// var yADD = 0； // 中心点y轴增加量
+
+var isSecond = 0
+function draw(){
+  var canvas = document.getElementById('canvas');
+  if (!canvas.getContext) return;
+  var ctx = canvas.getContext("2d");
+  ctx.clearRect(0, 0, 500, 500); // clear canvas
+
+
+  if (isStretch) {
+    headMove += (1.5 * direction)
+    y += (1 * direction)
+    x = (startPosition + headMove + endPosition) / 2
+    if (y > 100) {
+      y = 100
+      isStretch = !isStretch
+      isLimit = true
+    }
+  } else {
+    if (isSecond >= 2) {
+      console.log(x)
+      console.log(y)
+      // alert(1)
+    }
+    tailMove += (1.5 * direction)
+    y -= (1 * direction)
+    x = (tailMove + startPosition + endPosition) / 2
+    if (x > (startPosition - lineWidth / 4)) {
+      isStretch = !isStretch
+      isLimit = true
+    }
+  }
+
+  ctx.beginPath();
+  ctx.strokeStyle = "#ffd04b";
+  ctx.lineWidth = 2;
+  ctx.moveTo((endPosition + tailMove), 100);
+  ctx.lineTo((endPosition + tailMove + headLength), 100);
+  ctx.bezierCurveTo((x + endPosition + tailMove + headLength) / 2, 100, (x + endPosition + tailMove + headLength) / 2, y, x, y);
+  ctx.bezierCurveTo((startPosition - headLength + headMove + x) / 2, y, (startPosition - headLength + headMove + x) / 2, 100, (startPosition - headLength + headMove), 100);
+  ctx.lineTo(startPosition + headMove, 100)
+  ctx.stroke();
+  if (isLimit) {
+    isSecond++
+    if (isSecond >= 7) {
+      return
+    }
+    isLimit = false
+    startPosition = startPosition + headMove
+    endPosition = endPosition + tailMove
+    console.log('-------')
+    console.log(startPosition)
+    console.log(endPosition)
+    headMove = 0
+    tailMove = 0
+  }
+  
+  window.requestAnimationFrame(draw);
+}
+function init () {
+
+  window.requestAnimationFrame(draw);
+}
+init()
+
+
+</script>
